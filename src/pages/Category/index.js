@@ -1,8 +1,4 @@
-import React, { useState } from 'react';
-import BootstrapTable from 'react-bootstrap-table-next';
-import paginationFactory, { PaginationProvider } from 'react-bootstrap-table2-paginator';
-import ToolkitProvider from 'react-bootstrap-table2-toolkit/dist/react-bootstrap-table2-toolkit';
-import { Pagination } from 'react-laravel-paginex';
+import React, { useState, useEffect, cloneElement } from 'react';
 import Breadcrumbs from "components/Common/Breadcrumb";
 import { Button, Card, CardBody, Col, Container, DropdownItem, DropdownMenu, DropdownToggle, Row, Spinner, UncontrolledButtonDropdown } from 'reactstrap';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +9,70 @@ import { Router, useParams } from 'react-router-dom/cjs/react-router-dom.min';
 import SetCategoryPage from './Action/SetCategoryPage';
 import DeleteConfirmation from 'components/Common/DeleteConfirmation';
 import { del } from 'helpers/api_helper';
-import { getImageUrl } from 'helpers/utils';
+import { getImageUrl, showToast } from 'helpers/utils';
+import { DndContext } from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy
+} from "@dnd-kit/sortable";
+import { HolderOutlined } from '@ant-design/icons';
+import { CSS } from "@dnd-kit/utilities";
+import { Pagination, Table } from "antd";
+
+const RowDrag = ({ children, ...props }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({
+    id: props["data-row-key"]
+  });
+
+  const style = {
+    ...props.style,
+    transform: CSS.Transform.toString(
+      transform && {
+        ...transform,
+        scaleY: 1
+      }
+    )?.replace(/translate3d\(([^,]+),/, "translate3d(0,"),
+    transition,
+    ...(isDragging
+      ? {
+        position: "relative",
+        zIndex: 9999
+      }
+      : {})
+  };
+
+  return (
+    <tr {...props} ref={setNodeRef} style={style} {...attributes}>
+      {children.length > 0 && children?.map((child) => {
+        if (child.key === "sort") {
+          return cloneElement(child, {
+            children: (
+              <HolderOutlined
+                ref={setActivatorNodeRef}
+                style={{
+                  touchAction: "none",
+                  cursor: "pointer"
+                }}
+                {...listeners}
+              />
+            )
+          });
+        }
+        return child;
+      })}
+    </tr>
+  );
+};
 
 const Category = () => {
   const { id } = useParams()
@@ -24,6 +83,7 @@ const Category = () => {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [showDelete, setShowDelete] = useState(false)
+  const [dataSource, setDataSource] = useState([])
 
   const { data, refetch: getData, isLoading } = useQuery(['categories', search, page, id], () => api.categories({
     params: {
@@ -60,9 +120,66 @@ const Category = () => {
     toggle();
   };
 
+  const handleActiveCategory = async (data) => {
+    try {
+      const newStatus = data.status === 1 ? 0 : 1;
+
+      const formData = new FormData();
+
+      formData.append('_method', 'put');
+      formData.append('parent_id', data.parent_id);
+      formData.append('page_id', data.page_id);
+      formData.append('name', data.name);
+      formData.append('is_best', data.is_best);
+      formData.append('slug', data.slug);
+      formData.append('position', data.position);
+      formData.append('image', data.image);
+      formData.append('status', newStatus);
+
+
+      await api.updateCategory(data.id, formData);
+
+      showToast('Status updated successfully');
+      getData(); // refetch table biar updated
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update status', 'error');
+    }
+  }
+
+  const handleUpdatePosition = async (newList) => {
+    try {
+      for (let i = 0; i < newList.length; i++) {
+        const item = newList[i];
+
+        const formData = new FormData();
+        formData.append('_method', 'put');
+        formData.append('position', i + 1); // misal urutan 1-based
+
+        // Kalau field lain perlu, tambahkan di sini
+        formData.append('parent_id', item.parent_id);
+        formData.append('page_id', item.page_id);
+        formData.append('name', item.name);
+        formData.append('is_best', item.is_best);
+        formData.append('slug', item.slug);
+        formData.append('image', item.image);
+        formData.append('status', item.status);
+
+        await api.updateCategory(item.id, formData);
+      }
+
+      showToast('Positions updated successfully');
+      getData();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to update positions', 'error');
+    }
+  };
+
+
   const handleCategoryPageModal = async (data) => {
     const res = await api.categoryPage(data.id);
-    setModalData({category_id: data.id, ...res.data})
+    setModalData({ category_id: data.id, ...res.data })
     togglePage();
   };
 
@@ -87,6 +204,12 @@ const Category = () => {
     custom: true,
   };
 
+  const lastPosition = data?.data?.reduce((max, cat) => {
+    const pos = parseInt(cat.position, 10) || 0;
+    return pos > max ? pos : max;
+  }, 0) || 0;
+
+
   const defaultSorted = [
     {
       dataField: "id",
@@ -95,22 +218,27 @@ const Category = () => {
     },
   ];
 
-  const CategoryColumns = toggleModal => [
+  const columns = [
     {
-      dataField: "id",
-      text: "#",
-      sort: true,
-      formatter: (cellContent, row, i) => i + 1,
+      key: "sort"
     },
     {
-      dataField: "name",
-      text: "Name",
-      formatter: (cellContent, row, i) => <Link to={`/categories/${row.id}`}>{row.name}</Link>,
+      title: '#',
+      dataIndex: 'id',
+      key: 'id',
+      render: (cellContent, row, i) => i + 1
     },
     {
-      dataField: "image",
-      text: "Background Image",
-      formatter: (cellContent, row, i) => {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      render: (cellContent, row, i) => <Link to={`/categories/${row.id}`}>{row.name}</Link>,
+    },
+    {
+      title: 'Background Image',
+      dataIndex: 'image',
+      key: 'image',
+      render: (cellContent, row, i) => {
         if (row.image) {
           return <img src={getImageUrl(row.image)} width={200} />
         }
@@ -118,14 +246,16 @@ const Category = () => {
       },
     },
     {
-      dataField: "is_best",
-      text: "Best Category",
-      formatter: (cellContent, row, i) => <span>{!!row.is_best ? 'Yes' : 'No'}</span>,
+      title: 'Best Category',
+      dataIndex: 'is_best',
+      key: 'is_best',
+      render: (cellContent, row, i) => <span>{!!row.is_best ? 'Yes' : 'No'}</span>,
     },
     {
-      dataField: "status",
-      text: "Status",
-      formatter: (cellContent, row, i) => (
+      title: 'Status',
+      dataIndex: 'status',
+      key: 'status',
+      render: (cellContent, row, i) => (
         row.status == 1 ? (
           <div className="badge badge-soft-success">Active</div>
         ) : (
@@ -134,11 +264,10 @@ const Category = () => {
       ),
     },
     {
-      dataField: "action",
-      isDummyField: true,
-      text: "Action",
-      // eslint-disable-next-line react/display-name
-      formatter: (cellContent, row) => (
+      title: 'Action',
+      dataIndex: 'action',
+      key: 'action',
+      render: (cellContent, row) => (
         <>
           <UncontrolledButtonDropdown direction="start">
             <DropdownToggle caret>
@@ -150,6 +279,9 @@ const Category = () => {
                   Set Page
                 </DropdownItem>
               </Link> */}
+              <DropdownItem onClick={() => handleActiveCategory(row)}>
+                {row.status == 0 ? 'Enabled' : 'Disabled'}
+              </DropdownItem>
               <DropdownItem onClick={() => handleUpdateModal(row)}>
                 Edit
               </DropdownItem>
@@ -164,7 +296,30 @@ const Category = () => {
         </>
       ),
     },
-  ];
+  ]
+
+  const onDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = dataSource.findIndex(item => item.id === active.id);
+    const newIndex = dataSource.findIndex(item => item.id === over.id);
+
+    const newList = arrayMove(dataSource, oldIndex, newIndex)
+      .map((item, index) => ({ ...item, position: index + 1 }));
+
+    setDataSource(newList);
+
+    handleUpdatePosition(newList);
+  };
+
+  useEffect(() => {
+    if (data?.data) {
+      setDataSource(data.data);
+    }
+  }, [data]);
+
+  console.log(data)
+
   return (
     <React.Fragment>
       <div className="page-content">
@@ -211,52 +366,36 @@ const Category = () => {
                     <Row>
                       <Col sm="12">
                         {data && (
-                          <PaginationProvider
-                            pagination={paginationFactory(pageOptions)}
-                            keyField="id"
-                            columns={CategoryColumns()}
-                            data={data.data}
-                          >
-                            {({ paginationProps, paginationTableProps }) => (
-                              <ToolkitProvider
-                                keyField="id"
-                                data={data.data}
-                                columns={CategoryColumns()}
-                                bootstrap4
-                                // search
+                          <>
+                            <DndContext onDragEnd={onDragEnd}>
+                              <SortableContext
+                                items={dataSource.map((i) => i.id)}
+                                strategy={verticalListSortingStrategy}
                               >
-                                {toolkitProps => (
-                                  <React.Fragment>
-                                    <Row>
-                                      <Col xl="12">
-                                        <div className="table-responsive">
-                                          <BootstrapTable
-                                            keyField="id"
-                                            responsive
-                                            sorted={false}
-                                            striped={false}
-                                            defaultSorted={defaultSorted}
-                                            selectRow={selectRow}
-                                            classes={
-                                              "table align-middle table-nowrap table-check"
-                                            }
-                                            headerWrapperClasses={"table-light"}
-                                            {...toolkitProps.baseProps}
-                                            {...paginationTableProps}
-                                          />
-                                        </div>
-                                      </Col>
-                                    </Row>
-                                    <Row className="align-items-md-center mt-30">
-                                      <Col className="pagination pagination-rounded justify-content-end mb-2 inner-custom-pagination">
-                                        <Pagination changePage={(e) => setPage(e.page)} data={data} />
-                                      </Col>
-                                    </Row>
-                                  </React.Fragment>
-                                )}
-                              </ToolkitProvider>
-                            )}
-                          </PaginationProvider>
+                                <Table
+                                  components={{
+                                    body: {
+                                      row: RowDrag
+                                    }
+                                  }}
+                                  rowKey="id"
+                                  columns={columns}
+                                  dataSource={[...dataSource].sort((a, b) => a.position - b.position)}
+                                  pagination={false}
+                                />
+                              </SortableContext>
+                            </DndContext>
+                            <div className='mt-2'>
+                              <Pagination
+                                align='end'
+                                current={data?.current_page || 1}
+                                pageSize={data?.per_page || 10}
+                                total={data?.total || 0}
+                                onChange={(newPage) => setPage(newPage)}
+                              />
+                            </div>
+                          </>
+
                         )}
                       </Col>
                     </Row>
@@ -267,7 +406,7 @@ const Category = () => {
           </Row>
         </Container>
       </div>
-      {modal && <CreateUpdate modal={modal} toggle={toggle} handleCreateModal={handleCreateModal} data={modalData} refresh={getData} />}
+      {modal && <CreateUpdate modal={modal} toggle={toggle} handleCreateModal={handleCreateModal} data={modalData} refresh={getData} lastPosition={lastPosition} />}
       {modalPage && <SetCategoryPage modal={modalPage} toggle={togglePage} handleCreateModal={togglePage} data={modalData} />}
       <DeleteConfirmation showDelete={showDelete} setShowDelete={() => setShowDelete(false)} deleteAction={deleteAction} />
     </React.Fragment>

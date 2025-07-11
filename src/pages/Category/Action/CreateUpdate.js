@@ -8,7 +8,7 @@ import { useParams } from 'react-router-dom/cjs/react-router-dom.min';
 import Lightbox from "react-image-lightbox";
 import slugify from '@sindresorhus/slugify';
 
-const CreateUpdate = ({ data, toggle, modal, handleCreateModal, refresh }) => {
+const CreateUpdate = ({ data, toggle, modal, handleCreateModal, refresh, lastPosition }) => {
   const { id } = useParams();
   const [errors, setErrors] = useState([])
   const { register, setValue, handleSubmit, reset, formState: { formErrors } } = useForm();
@@ -55,6 +55,16 @@ const CreateUpdate = ({ data, toggle, modal, handleCreateModal, refresh }) => {
     });
   }, [data, modal])
 
+  useEffect(() => {
+    reset({
+      parent_id: id ? id : undefined,
+      position: (Number(lastPosition) + 1),
+    });
+    setErrors([]);
+  }, [modal, lastPosition]);
+
+  console.log(lastPosition, data)
+
   return (
     <Modal
       size="md"
@@ -87,7 +97,7 @@ const CreateUpdate = ({ data, toggle, modal, handleCreateModal, refresh }) => {
                   className="form-control"
                   placeholder="Name"
                   {...register('name', { required: true })}
-                  // onChange={(e) => setValue('slug', slugify(e.target.value))}
+                // onChange={(e) => setValue('slug', slugify(e.target.value))}
                 />
                 {formErrors?.name && <small className="text-danger">This field is required</small>}
                 {errors.name && <span className="form-text text-danger">{errors.name[0]}</span>}
@@ -95,34 +105,25 @@ const CreateUpdate = ({ data, toggle, modal, handleCreateModal, refresh }) => {
             </Col>
           </Row>
 
-          <Row>
-            {/* <Col>
-              <div className="mb-3">
-                <label>Slug URL</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Slug"
-                  {...register('slug', { required: true })}
-                />
-                {formErrors?.slug && <small className="text-danger">This field is required</small>}
-                {errors.slug && <span className="form-text text-danger">{errors.slug[0]}</span>}
-              </div>
-            </Col> */}
-            <Col>
-              <div className="mb-3">
-                <label>Position</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Position"
-                  {...register('position', { required: true })}
-                />
-                {formErrors?.position && <small className="text-danger">This field is required</small>}
-                {errors.position && <span className="form-text text-danger">{errors.position[0]}</span>}
-              </div>
-            </Col>
-          </Row>
+          {
+            !data &&
+            <Row>
+              <Col>
+                <div className="mb-3">
+                  <label>Position</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Position"
+                    {...register('position', { required: true })}
+                  />
+                  {formErrors?.position && <small className="text-danger">This field is required</small>}
+                  {errors.position && <span className="form-text text-danger">{errors.position[0]}</span>}
+                </div>
+              </Col>
+            </Row>
+          }
+
 
           <Row>
             <Col>
@@ -159,24 +160,25 @@ const CreateUpdate = ({ data, toggle, modal, handleCreateModal, refresh }) => {
           <Row>
             <Col>
               <input
-                  type="checkbox"
-                  id="is_best"
-                  value={1}
-                  defaultChecked={data?.detail?.is_best ? true : false}
-                  name="is_best"
-                  className="mx-2"
-                  placeholder="Has Features?"
-                  {...register('is_best')}
-                />
+                type="checkbox"
+                id="is_best"
+                value={1}
+                defaultChecked={data?.detail?.is_best ? true : false}
+                name="is_best"
+                className="mx-2"
+                placeholder="Has Features?"
+                {...register('is_best')}
+              />
               <label htmlFor="is_best">Best Category</label>
               {formErrors?.is_best && <small className="text-danger">This field is required</small>}
               {errors.is_best && <span className="form-text text-danger">{errors.is_best[0]}</span>}
             </Col>
           </Row>
 
-          <Row>
-            <Col>
-              <input
+          {
+            !data && <Row>
+              <Col>
+                <input
                   type="checkbox"
                   id="status-category"
                   value={1}
@@ -185,11 +187,13 @@ const CreateUpdate = ({ data, toggle, modal, handleCreateModal, refresh }) => {
                   className="mx-2"
                   {...register('status')}
                 />
-              <label htmlFor="status-category">Enable Category</label>
-              {formErrors?.status && <small className="text-danger">This field is required</small>}
-              {errors.status && <span className="form-text text-danger">{errors.status[0]}</span>}
-            </Col>
-          </Row>
+                <label htmlFor="status-category">Enable Category</label>
+                {formErrors?.status && <small className="text-danger">This field is required</small>}
+                {errors.status && <span className="form-text text-danger">{errors.status[0]}</span>}
+              </Col>
+            </Row>
+          }
+
 
         </form>
       </div>

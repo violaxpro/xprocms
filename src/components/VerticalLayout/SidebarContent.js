@@ -93,12 +93,34 @@ const SidebarContent = props => {
       <SimpleBar className="h-100" ref={ref}>
         <div id="sidebar-menu">
           <ul className="metismenu list-unstyled" id="side-menu">
-            {/* <li className="menu-title">{props.t("Menu")} </li> */}
+            <li className="menu-title">{props.t("Dashboard")} </li>
             <li>
-              <Link to="/#">
+              <Link to="/#" className="has-arrow">
                 <i className="bx bx-home-circle"></i>
-                <span>{props.t("Dashboards")}</span>
+                <span>{props.t("Dashboard")}</span>
               </Link>
+              <ul className="sub-menu">
+                <li>
+                  <Link to="/visitor-traffic">
+                    <span>Visitor Traffic</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/customer-enggagement">
+                    <span>Customer Enggagement</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/callback-inquiries">
+                    <span>Callback Inquiries</span>
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/google-analytic">
+                    <span>Google Analytics Traffic</span>
+                  </Link>
+                </li>
+              </ul>
               {/* <ul className="sub-menu">
                 <li>
                   <Link to="/dashboard">{props.t("Default")}</Link>
@@ -146,22 +168,38 @@ const SidebarContent = props => {
 
             {hasRole(['Admin', 'Manager']) ? (
               <>
-                <li className="menu-title">Pages</li>
+                <li className="menu-title">Callback Request</li>
 
                 <li>
                   <Link to="/#" className="has-arrow">
                     <i className="bx bx-layout"></i>
-                    <span>Page Setting</span>
+                    <span>Callback Request</span>
                   </Link>
                   <ul className="sub-menu">
                     <li>
-                      <Link to="/categories">
-                        <span>Category</span>
+                      <Link to="/customer-request">
+                        <span>Customer Request</span>
                       </Link>
                     </li>
+                  </ul>
+                </li>
+
+                <li className="menu-title">Pages Setting</li>
+
+                <li>
+                  <Link to="/#" className="has-arrow">
+                    <i className="bx bx-layout"></i>
+                    <span>Pages Setting</span>
+                  </Link>
+                  <ul className="sub-menu">
                     <li>
                       <Link to="/homepage-setting">
                         Homepage Setting
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/categories">
+                        <span>Category</span>
                       </Link>
                     </li>
                     <li>
@@ -170,11 +208,16 @@ const SidebarContent = props => {
                       </Link>
                     </li>
                     <li>
+                      <Link to="/about-use">
+                        About Us
+                      </Link>
+                    </li>
+                    <li>
                       <Link to="/brands">
                         Brand
                       </Link>
                     </li>
-                    <li>
+                    {/* <li>
                       <Link to="/testimonials">
                         Testimonial
                       </Link>
@@ -183,8 +226,61 @@ const SidebarContent = props => {
                       <Link to="/projects">
                         Projects
                       </Link>
+                    </li> */}
+                  </ul>
+                </li>
+
+
+              </>
+            ) : null}
+
+            {hasRole(['Admin', 'Manager']) ? (
+              <>
+                <li className="menu-title">FAQ</li>
+
+                <li>
+                  <Link to="/faqs" className="has-arrow">
+                    <i className="bx bx-news"></i>
+                    <span>FAQ</span>
+                  </Link>
+                  <ul className="sub-menu">
+                    <li>
+                      <Link to="/faqs">
+                        <span>List</span>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link to="/faq-categories">
+                        <span>Category</span>
+                      </Link>
                     </li>
                   </ul>
+                </li>
+              </>
+            ) : null}
+
+            {hasRole(['Admin', 'Manager']) ? (
+              <>
+                <li className="menu-title">Projects</li>
+
+                <li>
+                  <Link to="/projects">
+                    <i className="bx bx-news"></i>
+                    <span>Projects</span>
+                  </Link>
+                </li>
+              </>
+            ) : null}
+
+            {hasRole(['Admin', 'Manager']) ? (
+              <>
+                <li className="menu-title">Testimonial</li>
+
+                <li>
+                  <Link to="/testimonials" >
+                    <i className="bx bx-news"></i>
+                    <span>Testimonial</span>
+                  </Link>
                 </li>
               </>
             ) : null}
@@ -216,28 +312,30 @@ const SidebarContent = props => {
 
             {hasRole(['Admin', 'Manager']) ? (
               <>
-                <li className="menu-title">FAQ</li>
+                <li className="menu-title">Partner</li>
 
                 <li>
-                  <Link to="/#" className="has-arrow">
+                  <Link to="/partner" className="has-arrow" >
                     <i className="bx bx-news"></i>
-                    <span>FAQ</span>
+                    <span>Partner</span>
                   </Link>
-                  <ul className="sub-menu">
-                    <li>
-                      <Link to="/faqs">
-                        <span>List</span>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link to="/faq-categories">
-                        <span>Category</span>
-                      </Link>
-                    </li>
-                  </ul>
                 </li>
+                <ul className="sub-menu">
+                  <li>
+                    <Link to="/partner">
+                      <span>Partner</span>
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/continent">
+                      <span>Continent</span>
+                    </Link>
+                  </li>
+                </ul>
               </>
             ) : null}
+
+
 
             {hasRole(['Admin', 'Manager']) ? (
               <>
@@ -246,11 +344,11 @@ const SidebarContent = props => {
                 <li>
                   <Link to="/settings">
                     <i className="bx bx-cog"></i>
-                    <span>Page Setting</span>
+                    <span>Setting</span>
                   </Link>
                 </li>
 
-                <li>
+                {/* <li>
                   <Link to="/settings/footer">
                     <i className="bx bx-cog"></i>
                     <span>Footer</span>
@@ -262,7 +360,7 @@ const SidebarContent = props => {
                     <i className="bx bx-user"></i>
                     <span>User</span>
                   </Link>
-                </li>
+                </li> */}
               </>
             ) : null}
 
