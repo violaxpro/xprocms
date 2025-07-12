@@ -14,8 +14,11 @@ import {
 } from "../../store/actions";
 
 // Layout Related Components
+import { Layout as AntdLayout } from 'antd';
+import { Content } from "antd/es/layout/layout";
 import Header from "./Header";
-import Sidebar from "./Sidebar";
+// import Sidebar from "./Sidebar";
+import Sidebar from "components/Common/Layout/Sidebar/Sidebar";
 import Footer from "./Footer";
 import RightSidebar from "../CommonForBoth/RightSidebar";
 
@@ -36,7 +39,7 @@ const Layout = props => {
     layoutModeType
   } = useSelector(state => ({
     isPreloader: state.Layout.isPreloader,
-    layoutModeType : state.Layout.layoutModeType,
+    layoutModeType: state.Layout.layoutModeType,
     leftSideBarThemeImage: state.Layout.leftSideBarThemeImage,
     leftSideBarType: state.Layout.leftSideBarType,
     layoutWidth: state.Layout.layoutWidth,
@@ -46,7 +49,7 @@ const Layout = props => {
   }));
 
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  
+
 
   const toggleMenuCallback = () => {
     if (leftSideBarType === "default") {
@@ -76,7 +79,7 @@ const Layout = props => {
     //init body click event fot toggle rightbar
     document.body.addEventListener("click", hideRightbar, true);
 
-     
+
   }, []);
 
   useEffect(() => {
@@ -138,16 +141,26 @@ const Layout = props => {
         </div>
       </div> */}
 
-      <div id="layout-wrapper">
+      {/* <div id="layout-wrapper">
         <Header toggleMenuCallback={toggleMenuCallback} />
         <Sidebar
           theme={leftSideBarTheme}
           type={leftSideBarType}
           isMobile={isMobile}
         />
+        <Sidebar />
         <div className="main-content">{props.children}</div>
         <Footer />
-      </div>
+      </div> */}
+      <AntdLayout style={{ minHeight: '100vh'}}>
+        <Sidebar />
+        <AntdLayout>
+          <Content >
+            {props.children}
+          </Content>
+          <Footer />
+        </AntdLayout>
+      </AntdLayout>
       {showRightSidebar ? <RightSidebar /> : null}
     </React.Fragment>
   );

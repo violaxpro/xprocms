@@ -16,9 +16,11 @@ import HorizontalLayout from "./components/HorizontalLayout/";
 import NonAuthLayout from "./components/NonAuthLayout";
 
 // Import scss
-import "./assets/scss/theme.scss";
+// import "./assets/scss/theme.scss";
 
 import "toastr/build/toastr.min.css";
+
+import "./index.css"
 
 // Import Firebase Configuration file
 // import { initFirebaseBackend } from "./helpers/firebase_helper";
